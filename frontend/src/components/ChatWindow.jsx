@@ -64,8 +64,9 @@ export default function ChatWindow({ currentUser, selectedUser, selectedGroup })
 
       if (isRelevantDirect || isRelevantGroup) {
         setMessages((prev) => {
-          // Deduplicate by id
-          if (prev.some((m) => m.id === data.id)) return prev;
+          // Deduplicate by id using a Set for O(1) lookup
+          const existingIds = new Set(prev.map((m) => m.id));
+          if (existingIds.has(data.id)) return prev;
           const senderUsername = userMap[data.sender_id] || `user_${data.sender_id}`;
           return [
             ...prev,

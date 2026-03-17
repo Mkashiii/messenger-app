@@ -48,7 +48,9 @@ class WebSocketService {
     this.ws.onclose = () => {
       clearInterval(this.pingInterval);
       if (this.shouldReconnect) {
-        this.reconnectTimer = setTimeout(() => this._open(userId, token), 3000);
+        // Re-read token from storage on reconnect so an updated token is used
+        const latestToken = localStorage.getItem('token') || token;
+        this.reconnectTimer = setTimeout(() => this._open(userId, latestToken), 3000);
       }
     };
 

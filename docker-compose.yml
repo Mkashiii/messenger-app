@@ -21,9 +21,10 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/messenger
-      SECRET_KEY: your-secret-key-change-in-production
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: "30"
     depends_on:
