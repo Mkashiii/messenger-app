@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { messagesAPI } from '../services/api';
 import wsService from '../services/websocket';
 
@@ -10,6 +10,20 @@ export default function ChatWindow({ currentUser, selectedUser, selectedGroup })
 
   const isGroup = !!selectedGroup;
   const chatTarget = selectedGroup || selectedUser;
+
+  // Build a lookup map: user_id -> username from group members or direct chat
+  const userMap = useMemo(() => {
+    const map = { [currentUser.id]: currentUser.username };
+    if (selectedUser) {
+      map[selectedUser.id] = selectedUser.username;
+    }
+    if (selectedGroup?.members) {
+      selectedGroup.members.forEach((m) => {
+        if (m.user) map[m.user.id] = m.user.username;
+      });
+    }
+    return map;
+  }, [currentUser, selectedUser, selectedGroup]);
 
   const fetchMessages = useCallback(async () => {
     if (!chatTarget) return;
@@ -52,6 +66,7 @@ export default function ChatWindow({ currentUser, selectedUser, selectedGroup })
         setMessages((prev) => {
           // Deduplicate by id
           if (prev.some((m) => m.id === data.id)) return prev;
+          const senderUsername = userMap[data.sender_id] || `user_${data.sender_id}`;
           return [
             ...prev,
             {
@@ -61,14 +76,14 @@ export default function ChatWindow({ currentUser, selectedUser, selectedGroup })
               receiver_id: data.receiver_id,
               group_id: data.group_id,
               created_at: data.created_at,
-              sender: { id: data.sender_id, username: data.sender_id === currentUser.id ? currentUser.username : selectedUser?.username || '' },
+              sender: { id: data.sender_id, username: senderUsername },
             },
           ];
         });
       }
     });
     return unsubscribe;
-  }, [currentUser, selectedUser, selectedGroup, isGroup]);
+  }, [currentUser, selectedUser, selectedGroup, isGroup, userMap]);
 
   const sendMessage = (e) => {
     e.preventDefault();
